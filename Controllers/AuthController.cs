@@ -8,6 +8,7 @@ using DatingApp.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
+using System;
 
 namespace DatingApp.API.Controllers
 {
@@ -26,7 +27,8 @@ namespace DatingApp.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody]UserForRegisterDTO user)
         {
-            user.UserName = user.UserName.ToLower();
+            if(!string.IsNullOrEmpty(user.UserName))
+                user.UserName = user.UserName.ToLower();
 
             if (await _repo.UserExists(user.UserName))
                 ModelState.AddModelError("UserName", "username already exists.");
