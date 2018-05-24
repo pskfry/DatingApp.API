@@ -53,6 +53,9 @@ namespace DatingApp.API.Controllers
             var userFromRepo = await _repo.Login(user.UserName.ToLower(), user.Password);
 
             if (userFromRepo == null)
+                ModelState.AddModelError("Credentials","Incorrect login credentials");
+
+            if(!ModelState.IsValid)
                 return Unauthorized();
 
             // generate token
