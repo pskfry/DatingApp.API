@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
 using System;
+using AutoMapper;
 
 namespace DatingApp.API.Controllers
 {
@@ -17,9 +18,11 @@ namespace DatingApp.API.Controllers
     {
         private readonly IAuthRepository _repo;
         private readonly IConfiguration _config;
+        private readonly IMapper _mapper;
 
-        public AuthController(IAuthRepository repo, IConfiguration config)
+        public AuthController(IAuthRepository repo, IConfiguration config, IMapper mapper)
         {
+            _mapper = mapper;
             _config = config;
             _repo = repo;
         }
@@ -27,7 +30,7 @@ namespace DatingApp.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody]UserForRegisterDTO user)
         {
-            if(!string.IsNullOrEmpty(user.UserName))
+            if (!string.IsNullOrEmpty(user.UserName))
                 user.UserName = user.UserName.ToLower();
 
             if (await _repo.UserExists(user.UserName))
@@ -53,12 +56,12 @@ namespace DatingApp.API.Controllers
             var userFromRepo = await _repo.Login(user.UserName.ToLower(), user.Password);
 
             if (userFromRepo == null)
-                ModelState.AddModelError("Credentials","Incorrect login credentials");
+                ModelState.AddModelError("Credentials", "Incorrect login credentials");
 
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
                 return Unauthorized();
 
-            // generate token
+            // generate jwt token
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_config.GetSection("AppSettings:Token").Value);
 
@@ -75,12 +78,16 @@ namespace DatingApp.API.Controllers
                     SecurityAlgorithms.HmacSha512Signature)
             };
 
+            // transfer to smaller UserForListDTO
+            var userForNav = _mapper.Map<UserForListDTO>(userFromRepo);
+
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var tokenString = tokenHandler.WriteToken(token);
 
             var jwtToken = new JsonResult(tokenString);
 
-            return Ok(jwtToken);
+            //return Ok(jwtToken);
+            return Ok(new { jwtToken, userForNav });
         }
     }
 }

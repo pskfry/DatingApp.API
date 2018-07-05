@@ -11,10 +11,11 @@ namespace DatingApp.API.Helpers
     {
         public AutoMapperProfiles()
         {
-            // CreateMap<User, UserForListDTO>();
-            // CreateMap<User, UserForDetailedDTO>();
             CreateMap<Photo, PhotoForUserDTO>();
             CreateMap<UserForUpdateDTO, User>();
+            
+            CreateMap<PhotoForCreationDTO, Photo>();
+            CreateMap<Photo, PhotoForReturnDTO>();
 
             CreateMap<User, UserForDetailedDTO>()
                 .ForMember(dest => dest.Age, opt => 
