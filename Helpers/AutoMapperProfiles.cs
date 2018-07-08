@@ -17,6 +17,8 @@ namespace DatingApp.API.Helpers
             CreateMap<PhotoForCreationDTO, Photo>();
             CreateMap<Photo, PhotoForReturnDTO>();
 
+            CreateMap<UserForRegisterDTO, User>();
+
             CreateMap<User, UserForDetailedDTO>()
                 .ForMember(dest => dest.Age, opt => 
                     opt.MapFrom(src => (int)Math.Truncate((DateTime.Now - src.BirthDate).TotalDays / 365)))
