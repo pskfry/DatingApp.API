@@ -21,13 +21,13 @@ namespace DatingApp.API.Helpers
 
             CreateMap<User, UserForDetailedDTO>()
                 .ForMember(dest => dest.Age, opt => 
-                    opt.MapFrom(src => (int)Math.Truncate((DateTime.Now - src.BirthDate).TotalDays / 365)))
+                    opt.MapFrom(src => Extensions.CalculateAge(src.BirthDate)))
                 .ForMember(dest => dest.PhotoUrl, opt => 
                     opt.MapFrom(src => src.Photos.FirstOrDefault(o => o.isMainPhoto == true).Url));
 
             CreateMap<User, UserForListDTO>()
                 .ForMember(dest => dest.Age, opt =>
-                    opt.MapFrom(src => (int)Math.Truncate((DateTime.Now - src.BirthDate).TotalDays / 365)))
+                    opt.MapFrom(src => Extensions.CalculateAge(src.BirthDate)))
                 .ForMember(dest => dest.PhotoUrl, opt =>
                     opt.MapFrom(src => src.Photos.FirstOrDefault(o => o.isMainPhoto == true).Url));
         }
