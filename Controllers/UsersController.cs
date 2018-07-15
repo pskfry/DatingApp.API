@@ -93,14 +93,46 @@ namespace DatingApp.API.Controllers
             return Ok(changes);
         }
 
-        [HttpPost("delete/{Id}")]
-        public async Task<IActionResult> DeleteUser(int Id)
+        [HttpPost("delete/{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
         {
-            var user = this.GetUser(Id);
+            var user = this.GetUser(id);
             _repo.Delete(user);
             var changes = await _repo.SaveAll();
 
             return Ok(changes);
+        }
+
+        [HttpPost("{id}/like/{recipientId}")]
+        public async Task<IActionResult> LikeUser(int id, int recipientId)
+        {
+            if (id != int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value))
+            {
+                return Unauthorized();
+            }
+
+            var like = await _repo.GetLike(id, recipientId);
+
+            if (like != null)
+                return BadRequest("You already liked this user!");
+
+            if (await _repo.GetUser(recipientId) == null)
+            {
+                return NotFound();
+            }
+
+            like = new Like
+            {
+                LikeeId = id,
+                LikerId = recipientId
+            };
+
+            _repo.Add<Like>(like);
+
+            if (await _repo.SaveAll())
+                return Ok();
+
+            return BadRequest("Failed to like user");
         }
     }
 }
