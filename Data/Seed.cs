@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization.Json;
 using System.Text;
 using DatingApp.API.Models;
@@ -16,50 +17,53 @@ namespace DatingApp.API.Data
         }
 
         public void SeedData(){
-            _context.Users.RemoveRange(_context.Users);
-            _context.SaveChanges();
-
-            var userData = System.IO.File.ReadAllText("Data/UserSeedData.json");
-            var users = JsonConvert.DeserializeObject<List<User>>(userData);
-
-            foreach (User user in users)
+            if (_context.Users.Any())
             {
-                // create pw hash
-                byte[] passwordHash, passwordSalt;
+                _context.Users.RemoveRange(_context.Users);
+                _context.SaveChanges();
 
-                using (var hmac = new System.Security.Cryptography.HMACSHA512()){
-                    passwordSalt = hmac.Key;
-                    passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes("password"));;
+                var userData = System.IO.File.ReadAllText("Data/UserSeedData.json");
+                var users = JsonConvert.DeserializeObject<List<User>>(userData);
 
-                    user.PasswordHash = passwordHash;
-                    user.PasswordSalt = passwordSalt;
+                foreach (User user in users)
+                {
+                    // create pw hash
+                    byte[] passwordHash, passwordSalt;
+
+                    using (var hmac = new System.Security.Cryptography.HMACSHA512()){
+                        passwordSalt = hmac.Key;
+                        passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes("password"));;
+
+                        user.PasswordHash = passwordHash;
+                        user.PasswordSalt = passwordSalt;
+                    }
+
+                    // add user to db
+                    _context.Users.Add(user);
                 }
 
-                // add user to db
-                _context.Users.Add(user);
-            }
+                var userDataM = System.IO.File.ReadAllText("Data/UserSeedDataMen.json");
+                var usersM = JsonConvert.DeserializeObject<List<User>>(userDataM);
 
-            var userDataM = System.IO.File.ReadAllText("Data/UserSeedDataMen.json");
-            var usersM = JsonConvert.DeserializeObject<List<User>>(userDataM);
+                foreach (User user in usersM)
+                {
+                    // create pw hash
+                    byte[] passwordHash, passwordSalt;
 
-            foreach (User user in usersM)
-            {
-                // create pw hash
-                byte[] passwordHash, passwordSalt;
+                    using (var hmac = new System.Security.Cryptography.HMACSHA512()){
+                        passwordSalt = hmac.Key;
+                        passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes("password"));;
 
-                using (var hmac = new System.Security.Cryptography.HMACSHA512()){
-                    passwordSalt = hmac.Key;
-                    passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes("password"));;
+                        user.PasswordHash = passwordHash;
+                        user.PasswordSalt = passwordSalt;
+                    }
 
-                    user.PasswordHash = passwordHash;
-                    user.PasswordSalt = passwordSalt;
+                    // add user to db
+                    _context.Users.Add(user);
                 }
 
-                // add user to db
-                _context.Users.Add(user);
+                _context.SaveChanges();
             }
-
-            _context.SaveChanges();
         }
     }
 }

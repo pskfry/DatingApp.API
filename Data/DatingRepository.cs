@@ -38,7 +38,10 @@ namespace DatingApp.API.Data
 
         public async Task<PagedList<User>> GetUsers(UserParams userParams)
         {
-            var users = _context.Users.Include(p => p.Photos).OrderByDescending(u => u.LastActive).AsQueryable();
+            var users = _context.Users
+                .Include(p => p.Photos)
+                .OrderByDescending(u => u.LastActive)
+                .AsQueryable();
             
             if(!userParams.Likees && !userParams.Likers)
             {
@@ -51,8 +54,9 @@ namespace DatingApp.API.Data
                 if (userParams.MinAge != 18 || userParams.MaxAge != 99)
                 {
                     // filter by age
-                    users = users.Where(u => Extensions.CalculateAge(u.BirthDate) >= userParams.MinAge);
-                    users = users.Where(u => Extensions.CalculateAge(u.BirthDate) <= userParams.MaxAge);
+                    var min = DateTime.Today.AddYears(-userParams.MaxAge - 1);
+                    var max = DateTime.Today.AddYears(-userParams.MinAge);
+                    users = users.Where(u => u.BirthDate >= min && u.BirthDate <= max);
                 }
             }
 

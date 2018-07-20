@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Http;
 using DatingApp.API.Helpers;
 using Newtonsoft.Json;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace DatingApp.API
 {
@@ -40,10 +41,46 @@ namespace DatingApp.API
             {
                 opt.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             });
-            services.AddDbContext<DataContext>(options => options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
+
+            services.AddDbContext<DataContext>(options => options
+                .UseMySql(Configuration.GetConnectionString("DefaultConnection"))
+                .ConfigureWarnings(warnings => warnings.Ignore(CoreEventId.IncludeIgnoredWarning)));
 
             // used to seed randomly generated json data into the db
-            // services.AddTransient<Seed>();
+            services.AddTransient<Seed>();
+
+            services.AddAutoMapper();
+            services.AddScoped<IAuthRepository, AuthRepository>();
+            services.Configure<CloudinarySettings>(Configuration.GetSection("CloudinarySettings"));
+            services.AddScoped<IDatingRepository, DatingRepository>();
+            services.AddScoped<LogUserActivity>();
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options => {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ValidateIssuer = false,
+                        ValidateAudience = false
+                    };
+                });
+        }
+
+        public void ConfigureDevelopmentServices(IServiceCollection services)
+        {
+            var key = Encoding.ASCII.GetBytes(Configuration.GetSection("AppSettings:Token").Value);
+
+            services.AddMvc().AddJsonOptions(opt =>
+            {
+                opt.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+            });
+            
+            services.AddDbContext<DataContext>(options => options
+                .UseSqlite(Configuration.GetConnectionString("DefaultConnection"))
+                .ConfigureWarnings(warnings => warnings.Ignore(CoreEventId.IncludeIgnoredWarning)));
+
+            // used to seed randomly generated json data into the db
+            services.AddTransient<Seed>();
 
             services.AddAutoMapper();
             services.AddScoped<IAuthRepository, AuthRepository>();
@@ -63,7 +100,7 @@ namespace DatingApp.API
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env /*, Seed seeder*/)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, Seed seeder)
         {
             if (env.IsDevelopment())
             {
@@ -85,11 +122,16 @@ namespace DatingApp.API
             }
 
             // used to seed random json data to our db
-            // seeder.SeedData();
+            seeder.SeedData();
             
             app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().AllowCredentials());
             app.UseAuthentication();
-            app.UseMvc();
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
+            app.UseMvc(routes => routes.MapSpaFallbackRoute(
+                name: "spa-fallback",
+                defaults: new { controller = "Fallback", action = "Index" }
+            ));
         }
     }
 }
